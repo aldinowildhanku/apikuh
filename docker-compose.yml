@@ -1,0 +1,18 @@
+version: '3.8'
+
+services:
+  web:
+    image: app-name:latest
+    build:
+      target: web
+      context: .
+    env_file:
+      - .env
+    ports:
+      - ":80"
+    volumes:
+      - .:/var/www/html
+    depends_on:
+      - db
+    networks:
+      - alisa-proxy
