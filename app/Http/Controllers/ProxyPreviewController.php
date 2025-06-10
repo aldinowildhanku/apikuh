@@ -26,72 +26,6 @@ class ProxyPreviewController extends Controller
             'preview_url' => url("/preview-content?host=$host&ip=$ip&path=/"),
         ]);
     }
-
-    // Render konten HTML halaman via proxy dan rewrite semua link + asset
-//     public function previewContent(Request $request)
-//     {
-//         $host = $request->query('host');
-//         $ip = $request->query('ip');
-//         $path = $request->query('path', '/');
-
-//         if (!$host || !$ip) {
-//             return response('Missing host or IP.', 400);
-//         }
-
-//         try {
-//             // Ambil konten halaman asli
-//             $response = Http::withHeaders([
-//                 'Host' => $host,
-//             ])->timeout(15)->get("http://$ip$path");
-
-//             $html = $response->body();
-
-//             if ($response->failed() && $response->status() !== 403) {
-//     return response()->json([
-//         'status' => false,
-//         'message' => 'domain not valid',
-//     ], 400);
-// }
-            
-//             // Hapus tag <base href> agar relative path gak kacau
-//             $html = preg_replace('/<base[^>]+>/i', '', $html);
-
-//             // Ganti semua protokol http:// jadi https:// agar hindari mixed content error
-//             $html = str_replace('http://', 'https://', $html);
-
-//             // Rewrite semua src, href, action yang bukan absolute URL agar lewat proxy
-//             $html = preg_replace_callback(
-//                 '/\b(src|href|action)=["\'](?!https?:|\/\/|data:|mailto:|tel:|#)([^"\']+)["\']/i',
-//                 function ($matches) use ($host, $ip) {
-//                     $attr = $matches[1];
-//                     $original = $matches[2];
-
-//                     // Normalisasi path selalu pakai leading slash
-//                     $cleanedPath = '/' . ltrim($original, '/');
-
-//                     // Tentukan tipe: jika ekstensi file adalah halaman (php/html/no-ext) maka lewat preview-content
-//                     $ext = pathinfo(parse_url($cleanedPath, PHP_URL_PATH), PATHINFO_EXTENSION);
-//                     $ext = strtolower($ext);
-
-//                     if (in_array($ext, ['php', 'html']) || $ext === '') {
-//                         // Halaman, redirect ke preview-content
-//                         $proxyUrl = url("/preview-content?host=$host&ip=$ip&path=" . urlencode($cleanedPath));
-//                     } else {
-//                         // Asset, redirect ke preview-asset
-//                         $proxyUrl = url("/preview-asset?host=$host&ip=$ip&path=" . urlencode($cleanedPath));
-//                     }
-
-//                     return "$attr=\"$proxyUrl\"";
-//                 },
-//                 $html
-//             );
-
-//             return response($html)->header('Content-Type', 'text/html');
-
-//         } catch (\Exception $e) {
-//             return response('Preview failed: ' . $e->getMessage(), 500);
-//         }
-//     }
     
 public function previewContent(Request $request)
 {
@@ -146,9 +80,6 @@ public function previewContent(Request $request)
     // Parse host dari URL final untuk rewrite URL absolut
     $parsedHost = parse_url($finalUrl, PHP_URL_HOST);
 
-    // Rewrite semua URL asset:
-    // 1) Semua URL relative di src, href, action
-    // 2) Semua URL absolute yang domain sama dengan $host atau $parsedHost
     $html = preg_replace_callback(
         '/\b(src|href|action)=["\']([^"\']+)["\']/i',
         function ($matches) use ($host, $ip, $parsedHost) {
