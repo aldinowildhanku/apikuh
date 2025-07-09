@@ -34,13 +34,18 @@ class FiveMServerController extends Controller
         try {
             // *** PERUBAHAN DI SINI: MENAMBAHKAN BEBERAPA HEADER LAINNYA ***
             $response = Http::withHeaders([
-                'User-Agent'      => 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36', // Versi Chrome yang lebih baru
-                'Accept'          => 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7',
+                'User-Agent'      => 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+                'Accept'          => 'application/json, text/plain, */*', // Sesuaikan dengan browser Anda
                 'Accept-Language' => 'en-US,en;q=0.9,id;q=0.8',
                 'Connection'      => 'keep-alive',
-                'Upgrade-Insecure-Requests' => '1',
-                'DNT'             => '1', // Do Not Track request header
-                // 'Referer'         => 'https://servers.fivem.net/', // Opsional, kadang membantu
+                'Cache-Control'   => 'no-cache', // Mungkin membantu
+                'Pragma'          => 'no-cache', // Mungkin membantu
+                'Sec-Fetch-Site'  => 'cross-site', // Penting!
+                'Sec-Fetch-Mode'  => 'cors',       // Penting!
+                'Sec-Fetch-Dest'  => 'empty',      // Penting!
+                'DNT'             => '1',
+                // 'Referer'         => 'https://servers.fivem.net/', // Jika ada, tambahkan
+                // Tambahkan header lain yang Anda temukan di browser request Anda
             ])->get($apiUrl);
 
             if ($response->successful()) {

@@ -8,6 +8,7 @@ use App\Http\Controllers\SmtpController;
 use App\Http\Controllers\DataConverterController;
 use App\Http\Controllers\SplitBillController;
 use App\Http\Controllers\FiveMServerController;
+use App\Http\Controllers\TiktokController;
 
 Route::post('/preview-proxy', [ProxyPreviewController::class, 'preview']) ->middleware('throttle:5,1'); // Maks 5 request per menit;
 Route::post('/convert-data', [DataConverterController::class, 'convert']) ->middleware('throttle:5,1'); // Maks 5 request per menit;
@@ -18,3 +19,4 @@ Route::post('/send-email', [SmtpController::class, 'send'])
 Route::post('/split-bill', [SplitBillController::class, 'calculateAndStore'])->middleware('throttle:5,1');
 Route::get('/split-bill/{invoice_id}', [SplitBillController::class, 'show']);
 Route::get('/fivem/server-data/{serverName}', [FiveMServerController::class, 'getServerData']) ->middleware('throttle:5,1'); // Maks 5 request per menit;
+Route::post('/tiktok-info', [TiktokController::class, 'getInfo']);
