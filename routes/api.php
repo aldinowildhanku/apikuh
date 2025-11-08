@@ -11,6 +11,7 @@ use App\Http\Controllers\FiveMServerController;
 use App\Http\Controllers\TiktokController;
 use App\Http\Controllers\SecretMessageController;
 use App\Http\Controllers\GrowAGardenController;
+use App\Http\Controllers\PdfController;
 
 Route::post('/preview-proxy', [ProxyPreviewController::class, 'preview']) ->middleware('throttle:5,1'); // Maks 5 request per menit;
 Route::post('/convert-data', [DataConverterController::class, 'convert']) ->middleware('throttle:5,1'); // Maks 5 request per menit;
@@ -22,7 +23,10 @@ Route::post('/split-bill', [SplitBillController::class, 'calculateAndStore'])->m
 Route::get('/split-bill/{invoice_id}', [SplitBillController::class, 'show']);
 Route::get('/fivem/server-data/{serverName}', [FiveMServerController::class, 'getServerData']) ->middleware('throttle:5,1'); // Maks 5 request per menit;
 Route::post('/tiktok-info', [TiktokController::class, 'getInfo'])->middleware('throttle:3,1');
-Route::post('/secret', [SecretMessageController::class, 'create']);
+Route::post('/secret-messages', [SecretMessageController::class, 'create']);
+Route::get('/secret-messages/{uuid}', [SecretMessageController::class, 'show']);
 Route::get('/growagarden/live-stock', [GrowAGardenController::class, 'getLiveStockData']) ->middleware('throttle:6,1');
- Route::get('/growagarden/weather-stats', [GrowAGardenController::class, 'getWeatherStats']) ->middleware('throttle:6,1');
- Route::get('/growagarden/restock-timers', [GrowAGardenController::class, 'getRestockTimers']) ->middleware('throttle:6,1');
+Route::get('/growagarden/weather-stats', [GrowAGardenController::class, 'getWeatherStats']) ->middleware('throttle:6,1');
+Route::get('/growagarden/restock-timers', [GrowAGardenController::class, 'getRestockTimers']) ->middleware('throttle:6,1');
+Route::post('/generate-pdf', [PdfController::class, 'generate']); // Maks 5 request per menit
+Route::post('/merge-pdf', [PdfController::class, 'merge']);

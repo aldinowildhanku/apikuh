@@ -3,7 +3,9 @@
 return [
     'servers' => [
         'indopride' => 'bak4pl',
-        'nusaindah' => 'ele3bm',
+        'kotakita' => 'r35px8',
+        'executive' => 'roek67',
+        'kitarp' => 'rj9l5g',
         // Tambahkan server lain di sini:
         // 'nama_pendek_server' => 'id_server_fivem',
     ],
