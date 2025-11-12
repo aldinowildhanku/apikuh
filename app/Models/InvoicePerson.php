@@ -8,8 +8,6 @@ use Illuminate\Database\Eloquent\Model;
 class InvoicePerson extends Model
 {
     use HasFactory;
-
-    // Tambahkan baris ini untuk mendefinisikan nama tabel secara eksplisit
     protected $table = 'invoice_persons';
 
     protected $fillable = [

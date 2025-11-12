@@ -3,21 +3,19 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Http; // Untuk melakukan request HTTP
-use Illuminate\Support\Facades\Log;   // Untuk logging
-use Illuminate\Support\Facades\Cache; // Untuk caching
+use Illuminate\Support\Facades\Http; 
+use Illuminate\Support\Facades\Log;  
+use Illuminate\Support\Facades\Cache; 
 use Exception;
 use Carbon\Carbon;
 
 class GrowAGardenController extends Controller
 {
-    // URL dasar API eksternal Grow a Garden
+
     protected $externalApiBaseUrl = 'https://growagarden.gg/api/';
-    protected $timezone = 'America/New_York'; // Timezone yang digunakan di JS
+    protected $timezone = 'America/New_York'; 
 
     /**
-     * Mengambil dan memformat data stok dari growagarden.gg.
-     * Data akan di-cache untuk menghindari terlalu banyak request ke API eksternal.
      *
      * @return \Illuminate\Http\JsonResponse
      */
@@ -25,7 +23,7 @@ class GrowAGardenController extends Controller
      public function getLiveStockData()
     {
         $cacheKey = 'grow_a_garden_stock_data';
-        $cacheDurationInMinutes = 5; // Cache selama 5 menit
+        $cacheDurationInMinutes = 5; 
 
         try {
             $formattedData = Cache::remember($cacheKey, Carbon::now()->addMinutes($cacheDurationInMinutes), function () {
@@ -70,8 +68,7 @@ class GrowAGardenController extends Controller
     }
 
     /**
-     * Mengambil dan memformat data statistik cuaca dari growagarden.gg.
-     * Data akan di-cache untuk menghindari terlalu banyak request ke API eksternal.
+
      *
      * @return \Illuminate\Http\JsonResponse
      */
@@ -122,8 +119,7 @@ class GrowAGardenController extends Controller
     }
 
     /**
-     * Menghitung dan mengembalikan waktu restock untuk berbagai item.
-     * Berdasarkan logika JavaScript yang diberikan.
+
      *
      * @return \Illuminate\Http\JsonResponse
      */
@@ -131,16 +127,14 @@ class GrowAGardenController extends Controller
     {
         try {
             $now = Carbon::now($this->timezone);
-            $today = $now->copy()->startOfDay(); // Mulai hari ini di timezone yang sama
+            $today = $now->copy()->startOfDay();
 
-            // Helper function to format time
             $formatTime = function ($timestamp) use ($now) {
-                // Carbon::createFromTimestampMs() tidak tersedia di semua versi Carbon,
-                // jadi kita gunakan fromTimestamp() dan kalikan/bagi untuk milidetik
+
                 return Carbon::createFromTimestampMs($timestamp, $this->timezone)->format('h:i A');
             };
 
-            // Helper function to calculate time since
+
             $timeSince = function ($timestamp) use ($now) {
                 $diffInSeconds = $now->diffInSeconds(Carbon::createFromTimestampMs($timestamp, $this->timezone));
 
@@ -157,7 +151,7 @@ class GrowAGardenController extends Controller
                 return "{$hours}h ago";
             };
 
-            // Helper function to get reset times
+
             $getResetTimes = function ($intervalMs) use ($now, $today) {
                 $timeSinceStartOfDayMs = $now->diffInMilliseconds($today);
                 $lastResetMs = $today->getTimestampMs() + floor($timeSinceStartOfDayMs / $intervalMs) * $intervalMs;
@@ -166,7 +160,6 @@ class GrowAGardenController extends Controller
                 return ['lastReset' => $lastResetMs, 'nextReset' => $nextResetMs];
             };
 
-            // Define intervals in milliseconds
             $eggInterval = 30 * 60 * 1000;
             ['lastReset' => $eggLastReset, 'nextReset' => $eggNextReset] = $getResetTimes($eggInterval);
             $eggCountdownMs = $eggNextReset - $now->getTimestampMs();
@@ -175,7 +168,7 @@ class GrowAGardenController extends Controller
             $gearInterval = 5 * 60 * 1000;
             ['lastReset' => $gearLastReset, 'nextReset' => $gearNextReset] = $getResetTimes($gearInterval);
             $gearCountdownMs = $gearNextReset - $now->getTimestampMs();
-            $gearCountdown = $this->formatMillisecondsToMS($gearCountdownMs); // Menit dan Detik
+            $gearCountdown = $this->formatMillisecondsToMS($gearCountdownMs); 
 
             $cosmeticInterval = 4 * 3600 * 1000;
             ['lastReset' => $cosmeticLastReset, 'nextReset' => $cosmeticNextReset] = $getResetTimes($cosmeticInterval);
@@ -205,7 +198,7 @@ class GrowAGardenController extends Controller
                     'LastRestock'        => $formatTime($gearLastReset),
                     'timeSinceLastRestock' => $timeSince($gearLastReset),
                 ],
-                'seeds' => [ // Menggunakan interval gear untuk seeds, sesuai JS
+                'seeds' => [
                     'timestamp'          => $gearNextReset,
                     'countdown'          => $gearCountdown,
                     'LastRestock'        => $formatTime($gearLastReset),
@@ -217,7 +210,7 @@ class GrowAGardenController extends Controller
                     'LastRestock'        => $formatTime($cosmeticLastReset),
                     'timeSinceLastRestock' => $timeSince($cosmeticLastReset),
                 ],
-                'SummerHarvest' => [ // Menggunakan interval night untuk SummerHarvest, sesuai JS
+                'SummerHarvest' => [ 
                     'timestamp'          => $nightNextReset,
                     'countdown'          => $nightCountdown,
                     'LastRestock'        => $formatTime($nightLastReset),
@@ -248,9 +241,6 @@ class GrowAGardenController extends Controller
         }
     }
 
-    /**
-     * Helper: Memformat milidetik menjadi HHh MMm SSs.
-     */
     protected function formatMillisecondsToHMS(int $ms): string
     {
         $hours = floor($ms / 3.6e6);
@@ -259,9 +249,6 @@ class GrowAGardenController extends Controller
         return $this->pad($hours) . 'h ' . $this->pad($minutes) . 'm ' . $this->pad($seconds) . 's';
     }
 
-    /**
-     * Helper: Memformat milidetik menjadi MMm SSs.
-     */
     protected function formatMillisecondsToMS(int $ms): string
     {
         $minutes = floor($ms / 6e4);
@@ -269,18 +256,11 @@ class GrowAGardenController extends Controller
         return $this->pad($minutes) . 'm ' . $this->pad($seconds) . 's';
     }
 
-    /**
-     * Helper: Menambahkan padding nol di depan angka < 10.
-     */
     protected function pad(int $n): string
     {
         return $n < 10 ? '0' . $n : (string)$n;
     }
 
-    /**
-     * Fungsi helper untuk memformat item stok.
-     * Mirip dengan formatStockItems di JS.
-     */
     protected function formatStockItems(array $items, array $imageData): array
     {
         if (empty($items)) {
@@ -305,10 +285,7 @@ class GrowAGardenController extends Controller
         return $formatted;
     }
 
-    /**
-     * Fungsi helper untuk memformat item 'last seen'.
-     * Mirip dengan formatLastSeenItems di JS.
-     */
+
     protected function formatLastSeenItems(array $items, array $imageData): array
     {
         if (empty($items)) {
@@ -337,10 +314,6 @@ class GrowAGardenController extends Controller
         return $formatted;
     }
 
-    /**
-     * Fungsi utama untuk memformat seluruh data stok.
-     * Mirip dengan formatStocks di JS.
-     */
     protected function formatStocks(array $stocks): array
     {
         $imageData = $stocks['imageData'] ?? [];

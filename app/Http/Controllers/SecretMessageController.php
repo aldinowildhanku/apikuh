@@ -12,17 +12,15 @@ class SecretMessageController extends Controller
     {
         $request->validate([
             'message' => 'required|string',
-            // Opsional: tambahkan validasi untuk expiry jika masih ingin digunakan
+
         ]);
 
         $secret = SecretMessage::create([
             'message' => $request->message,
-            // expires_at tetap dipertahankan sebagai fallback security
             'expires_at' => Carbon::now()->addHours(24) 
         ]);
 
-        // Catatan: Anda perlu mengganti url() dengan route yang benar 
-        // yang mengarah ke endpoint API /show yang baru ini.
+
         $url = url('/message/' . $secret->uuid); 
 
         return response()->json([
@@ -31,29 +29,23 @@ class SecretMessageController extends Controller
         ]);
     }
 
-    /**
-     * Menampilkan pesan dan menghapusnya dari database segera setelah diakses.
-     */
+
     public function show($uuid)
     {
-        // 1. Cari pesan berdasarkan UUID dan pastikan belum expired
-        // Kita tidak lagi memfilter berdasarkan opened_at, karena kita akan menghapusnya
         $secret = SecretMessage::where('uuid', $uuid)
-            ->where('expires_at', '>', now()) // Filter expired messages
+            ->where('expires_at', '>', now()) 
             ->first();
 
         if (!$secret) {
-            // Jika tidak ditemukan atau sudah expired
+
             return response()->json(['error' => 'Pesan tidak ditemukan, sudah dibuka, atau sudah kedaluwarsa.'], 404);
         }
-        
-        // Simpan pesan untuk respons, lalu HAPUS
+
         $messageContent = $secret->message;
-        
-        // 2. Hapus pesan setelah diakses
+
         $secret->delete();
 
-        // 3. Kembalikan konten pesan
+
         return response()->json([
             'message' => $messageContent
         ]);

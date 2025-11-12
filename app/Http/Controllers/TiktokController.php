@@ -16,12 +16,10 @@ class TiktokController extends Controller
         }
 
         try {
-            // Step 1: Resolve shortened TikTok URL to full URL
             $response = Http::withHeaders([
                 'User-Agent' => 'Mozilla/5.0'
             ])->withoutRedirecting()->get($url);
 
-            // Get the redirected URL
             $realUrl = $response->header('Location') ?? (string) $response->effectiveUri();
 
             if (!$realUrl || !str_contains($realUrl, 'tiktok.com')) {
@@ -32,7 +30,7 @@ class TiktokController extends Controller
         }
 
         try {
-            // Step 2: Get oEmbed info from TikTok
+
             $oembedResponse = Http::withHeaders([
                 'User-Agent' => 'Mozilla/5.0'
             ])->get("https://www.tiktok.com/oembed", [
@@ -49,7 +47,7 @@ class TiktokController extends Controller
         }
 
         try {
-            // Step 3: Get download link from TikWM
+
             $tikwmApi = Http::withHeaders([
                 'User-Agent' => 'Mozilla/5.0',
                 'Referer' => 'https://www.tikwm.com/',
