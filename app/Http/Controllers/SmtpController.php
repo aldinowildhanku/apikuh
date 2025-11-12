@@ -13,7 +13,7 @@ class SmtpController extends Controller
 {
     public function send(Request $request)
     {
-        // Validasi input
+
         $validator = Validator::make($request->all(), [
             'email'           => 'required|email',
             'password'        => 'required|string',
@@ -33,7 +33,7 @@ class SmtpController extends Controller
         }
 
         try {
-            // Siapkan enkripsi (null jika diinput 'null')
+
             $encryption = $request->enkripsi;
             if ($encryption === 'null' || $encryption === null) {
                 $encryption = null;
@@ -41,7 +41,7 @@ class SmtpController extends Controller
 
             $useEncryption = $encryption === 'ssl' || $encryption === 'tls';
 
-            // Buat SMTP Transport
+
             $transport = new EsmtpTransport(
                 $request->hostnameserver,
                 $request->port,
@@ -52,14 +52,14 @@ class SmtpController extends Controller
 
             $mailer = new Mailer($transport);
 
-            // Buat Email
+
             $email = (new Email())
                 ->from($request->email)
                 ->to($request->targetemail)
                 ->subject($request->subject)
                 ->text($request->message);
 
-            // Kirim email
+
             $mailer->send($email);
 
             return response()->json([

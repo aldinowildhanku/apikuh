@@ -5,30 +5,31 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Http;
-use Illuminate\Support\Facades\Log; // Untuk logging error atau debug
+use Illuminate\Support\Facades\Log; 
 use Exception;
+use Illuminate\Support\Collection; 
 
-class FiveMServerController extends Controller
+class RedMServerController extends Controller
 {
-   /**
-     * Mengambil dan memfilter data server FiveM berdasarkan nama server.
+    /**
      *
      * @param string 
      * @return \Illuminate\Http\JsonResponse
      */
     public function getServerData(string $serverName)
     {
-       $fivemServers = config('fivem_servers.servers');
-        $baseUrl = config('fivem_servers.base_url');
 
-        if (!isset($fivemServers[$serverName])) {
+        $redmServers = config('redm_servers.servers');
+        $baseUrl = config('redm_servers.base_url');
+
+        if (!isset($redmServers[$serverName])) {
             return response()->json([
                 'status'  => 'failed',
-                'message' => 'Server not found or not configured.'
+                'message' => 'Server not found or not configured in redm_servers config.'
             ], 404);
         }
 
-        $serverId = $fivemServers[$serverName];
+        $serverId = $redmServers[$serverName];
         $apiUrl   = $baseUrl . $serverId;
 
         try {
@@ -41,8 +42,8 @@ class FiveMServerController extends Controller
                 'Cache-Control'   => 'no-cache',
                 'Pragma'          => 'no-cache', 
                 'Sec-Fetch-Site'  => 'cross-site', 
-                'Sec-Fetch-Mode'  => 'cors',       
-                'Sec-Fetch-Dest'  => 'empty',      
+                'Sec-Fetch-Mode'  => 'cors',      
+                'Sec-Fetch-Dest'  => 'empty',     
                 'DNT'             => '1',
 
             ])->get($apiUrl);
@@ -51,26 +52,29 @@ class FiveMServerController extends Controller
                 $data = $response->json();
 
                 if (!isset($data['Data'])) {
-                    Log::error('FiveM API response missing "Data" key.', [
+                    Log::error('RedM API response missing "Data" key.', [
                         'server_id' => $serverId,
                         'response'  => $data
                     ]);
                     return response()->json([
                         'status'  => 'failed',
-                        'message' => 'Invalid data structure received from FiveM API (missing "Data" key).'
+                        'message' => 'Invalid data structure received from RedM API (missing "Data" key).'
                     ], 500);
                 }
 
                 $serverData = $data['Data'];
                 $vars       = $serverData['vars'] ?? [];
 
+                $uptime = $vars['Uptime'] ?? 'N/A';
+                $website = $vars['Website'] ?? 'N/A';
+
                 $filteredData = [
                     'clients'          => $serverData['clients'] ?? 0,
                     'hostname'         => $serverData['hostname'] ?? 'N/A',
-                    'max_clients'      => $serverData['sv_maxclients'] ?? $serverData['svMaxclients'] ?? 0,
-                    'uptime'           => $vars['Uptime'] ?? 'N/A',
+                    'max_clients'      => $serverData['sv_maxclients'] ?? $serverData['svMaxclients'] ?? 0, 
+                    'uptime'           => $uptime,
                     'queue'            => $vars['Queue'] ?? 'N/A',
-                    'website'          => $vars['Website'] ?? 'N/A',
+                    'website'          => $website,
                     'discord'          => $vars['Discord'] ?? 'N/A',
                     'banner_connecting' => $vars['banner_connecting'] ?? null,
                     'banner_detail'    => $vars['banner_detail'] ?? null,
@@ -86,12 +90,12 @@ class FiveMServerController extends Controller
 
                 return response()->json([
                     'status'  => 'success',
-                    'message' => 'Server data retrieved successfully.',
+                    'message' => 'RedM server data retrieved successfully.',
                     'data'    => $filteredData
                 ]);
 
             } else {
-                Log::error('Failed to fetch FiveM server data.', [
+                Log::error('Failed to fetch RedM server data.', [
                     'server_id' => $serverId,
                     'status'    => $response->status(),
                     'response'  => $response->body()
@@ -99,12 +103,12 @@ class FiveMServerController extends Controller
 
                 return response()->json([
                     'status'  => 'failed',
-                    'message' => 'Failed to retrieve data from FiveM API. Status: ' . $response->status() . '. Check logs for more details.'
+                    'message' => 'Failed to retrieve data from RedM API. Status: ' . $response->status() . '. Check logs for more details.'
                 ], $response->status());
             }
 
         } catch (Exception $e) {
-            Log::error('An unexpected error occurred while fetching FiveM server data: ' . $e->getMessage(), [
+            Log::error('An unexpected error occurred while fetching RedM server data: ' . $e->getMessage(), [
                 'server_id' => $serverId,
                 'exception' => $e->getTraceAsString()
             ]);

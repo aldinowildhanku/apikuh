@@ -23,7 +23,6 @@ class PdfController extends Controller
 
         $pdf = Pdf::loadHTML($html);
 
-        // Stream PDF langsung
         return response($pdf->stream('output.pdf'), 200)
             ->header('Content-Type', 'application/pdf');
     }
@@ -49,11 +48,10 @@ class PdfController extends Controller
         }
     }
 
-    // Simpan hasil merge di storage sementara
+
     $outputPath = storage_path('app/public/merged.pdf');
     // $pdf->Output($outputPath, 'F');
 
-    // Kembalikan hasil sebagai file download atau response langsung
     return response()->download($outputPath, 'merged.pdf')->deleteFileAfterSend();
 }
 

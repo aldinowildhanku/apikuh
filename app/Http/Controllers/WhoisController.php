@@ -14,9 +14,8 @@ class WhoisController extends Controller
         ]);
 
         $domain = strtolower($request->input('domain'));
-        $tld = substr(strrchr($domain, '.'), 1); // ambil TLD terakhir
+        $tld = substr(strrchr($domain, '.'), 1); 
 
-        // Tentukan URL RDAP berdasarkan TLD
         $rdapUrl = match ($tld) {
             'id', 'my.id' => "https://rdap.pandi.id/rdap/domain/{$domain}",
             'com' => "https://rdap.verisign.com/com/v1/domain/{$domain}",
@@ -44,11 +43,10 @@ class WhoisController extends Controller
 
             $data = $response->json();
 
-            // Ambil event date berdasarkan eventAction
             $events = collect($data['events'] ?? []);
             $getEventDate = fn($action) => optional($events->firstWhere('eventAction', $action))['eventDate'] ?? 'not available';
 
-            // Ambil entity berdasarkan role
+
             $getEntityByRole = function (array $entities, string $role) {
                 foreach ($entities as $entity) {
                     if (in_array($role, $entity['roles'] ?? [])) {
@@ -62,20 +60,16 @@ class WhoisController extends Controller
             $registrar = $getEntityByRole($entities, 'registrar');
             $abuse = $getEntityByRole($entities, 'abuse');
 
-            // Ambil vcard array
             $getVcardArray = fn($entity) => collect($entity['vcardArray'][1] ?? []);
 
-            // Extract value dari vcard key tertentu
             $extractVcardValue = function ($vcard, $key) {
                 $item = $vcard->firstWhere(fn($i) => $i[0] === $key);
                 if (!$item) return null;
 
-                // Untuk tel, cek tipe data (uri / text)
                 if ($key === 'tel') {
                     return $item[3] ?? null;
                 }
 
-                // Untuk adr biasanya array, kita akan gabungkan
                 if ($key === 'adr' && is_array($item[3])) {
                     return implode(', ', array_filter($item[3]));
                 }
@@ -86,16 +80,13 @@ class WhoisController extends Controller
             $registrarVcard = $getVcardArray($registrar);
             $abuseVcard = $getVcardArray($abuse);
 
-            // Cari field dari registrar dulu, kalau tidak ada coba dari abuse
             $getField = fn($key) => 
                 $extractVcardValue($registrarVcard, $key) 
                 ?? $extractVcardValue($abuseVcard, $key) 
                 ?? 'not available';
 
-            // Ambil status pertama jika ada
             $status_code = $data['status'][0] ?? 'not available';
 
-            // Ambil nameservers list
             $nameservers = collect($data['nameservers'] ?? [])->pluck('ldhName')->toArray();
 
             return response()->json([

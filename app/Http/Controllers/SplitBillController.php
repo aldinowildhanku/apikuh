@@ -1,29 +1,27 @@
 <?php
 
-namespace App\Http\Controllers; // Pastikan namespace ini benar, sesuai struktur folder
+namespace App\Http\Controllers; 
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Str; // Untuk UUID/random string
+use Illuminate\Support\Str; 
 use App\Models\Invoice;
 use App\Models\InvoicePerson;
 use App\Models\InvoiceItem;
 use Exception;
-use Carbon\Carbon; // *** DITAMBAHKAN: Import Carbon untuk waktu ***
+use Carbon\Carbon; 
 
 class SplitBillController extends Controller
 {
     /**
-     * Endpoint untuk melakukan perhitungan dan menyimpan split bill.
      *
      * @param  \Illuminate\Http\Request  $request
      * @return \Illuminate\Http\JsonResponse
      */
     public function calculateAndStore(Request $request)
     {
-        // 1. Validasi Input
         $validator = Validator::make($request->all(), [
             'persons'                  => 'required|array|min:1',
             'persons.*.name'           => 'required|string|max:255',
@@ -35,7 +33,7 @@ class SplitBillController extends Controller
             'service_charge'           => 'nullable|numeric|min:0',
             'bank_name'                => 'nullable|string|max:255',
             'account_number'           => 'nullable|string|max:255',
-            'qris_image'               => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048', // Max 2MB
+            'qris_image'               => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048', 
         ]);
 
         if ($validator->fails()) {
@@ -43,7 +41,7 @@ class SplitBillController extends Controller
                 'status'  => 'failed',
                 'message' => 'Validation Error',
                 'errors'  => $validator->errors()
-            ], 422); // Unprocessable Entity
+            ], 422); 
         }
 
         // Ambil data dari request
@@ -54,11 +52,11 @@ class SplitBillController extends Controller
         $bankName       = $request->input('bank_name');
         $accountNumber  = $request->input('account_number');
 
-        DB::beginTransaction(); // Memulai transaksi database
+        DB::beginTransaction();
         try {
-            // 2. Hitung Total Sebelum Diskon
+
             $totalBeforeDiscount = 0;
-            $personTotals        = []; // Untuk menyimpan total belanjaan setiap orang
+            $personTotals        = []; 
 
             foreach ($personsData as $person) {
                 $currentPersonTotal = 0;
@@ -73,18 +71,14 @@ class SplitBillController extends Controller
                 ];
             }
 
-            // 3. Hitung Grand Total
             $grandTotal = $totalBeforeDiscount - $discountAmount + $shippingCost + $serviceCharge;
 
-            // Pastikan grand total tidak negatif
             if ($grandTotal < 0) {
                 $grandTotal = 0;
             }
 
-            // 4. Hitung Pro-rata Alokasi Biaya Tambahan/Diskon
-            $remainingAmountToDistribute = $grandTotal - $totalBeforeDiscount; // Perbedaan yang perlu dialokasikan
+            $remainingAmountToDistribute = $grandTotal - $totalBeforeDiscount; 
 
-            // Jika totalBeforeDiscount adalah 0 (misal: semua barang gratis), hindari pembagian nol
             $sharePerUnitOfCost = ($totalBeforeDiscount > 0)
                 ? $remainingAmountToDistribute / $totalBeforeDiscount
                 : 0;
@@ -95,42 +89,37 @@ class SplitBillController extends Controller
                 $personsToSave[] = [
                     'name'                      => $personData['name'],
                     'person_total_amount'       => $personData['total'],
-                    'amount_to_pay_after_prorate' => round($proratedAmount, 2), // Bulatkan 2 desimal
+                    'amount_to_pay_after_prorate' => round($proratedAmount, 2),
                     'items'                     => $personData['items']
                 ];
             }
 
-            // 5. Upload Gambar QRIS (jika ada)
             $qrisImageUrl = null;
             if ($request->hasFile('qris_image')) {
                 $image = $request->file('qris_image');
                 $imageName = time() . '_' . Str::random(10) . '.' . $image->getClientOriginalExtension();
-                // Simpan di storage/app/public/qris_images
-                // Pastikan Anda sudah menjalankan `php artisan storage:link` sebelumnya
                 $imagePath = $image->storeAs('qris_images', $imageName, 'public');
-                $qrisImageUrl = asset('storage/' . $imagePath); // Dapatkan URL yang bisa diakses publik
+                $qrisImageUrl = asset('storage/' . $imagePath); 
             }
 
-            // 6. Simpan Invoice Utama
-            // *** MODIFIKASI INVOICE_ID DIMULAI DI SINI ***
-            $timestamp = Carbon::now()->format('YmdHis'); // Contoh: 20250613185724
-            $uniqueSuffix = Str::upper(Str::random(4)); // Contoh: ABCD
-            $newInvoiceId = 'DHL' . $timestamp . $uniqueSuffix; // Contoh: DHL20250613185724ABCD
-            // *** MODIFIKASI INVOICE_ID BERAKHIR DI SINI ***
+
+            $timestamp = Carbon::now()->format('YmdHis'); 
+            $uniqueSuffix = Str::upper(Str::random(4)); 
+            $newInvoiceId = 'DHL' . $timestamp . $uniqueSuffix; 
+
 
             $invoice = Invoice::create([
-                'invoice_id'            => $newInvoiceId, // Gunakan invoice ID yang baru
+                'invoice_id'            => $newInvoiceId, 
                 'total_before_discount' => $totalBeforeDiscount,
                 'discount_amount'       => $discountAmount,
                 'shipping_cost'         => $shippingCost,
                 'service_charge'        => $serviceCharge,
-                'grand_total'           => round($grandTotal, 2), // Bulatkan 2 desimal
+                'grand_total'           => round($grandTotal, 2), 
                 'bank_name'             => $bankName,
                 'account_number'        => $accountNumber,
                 'qris_image_url'        => $qrisImageUrl,
             ]);
 
-            // 7. Simpan Detail Setiap Orang dan Barang Mereka
             foreach ($personsToSave as $personData) {
                 $invoicePerson = $invoice->persons()->create([
                     'person_name'               => $personData['name'],
@@ -146,30 +135,30 @@ class SplitBillController extends Controller
                 }
             }
 
-            DB::commit(); // Menyelesaikan transaksi
+            DB::commit();
 
             return response()->json([
                 'status'    => 'success',
                 'message'   => 'Split bill calculated and saved successfully.',
                 'invoice_id' => $invoice->invoice_id,
-                'invoice_details_url' => url('/api/split-bill/' . $invoice->invoice_id), // URL untuk mengambil detail
+                'invoice_details_url' => url('/api/split-bill/' . $invoice->invoice_id),
                 'data'      => [
                     'invoice' => $invoice,
-                    'persons' => $personsToSave, // Ini data yang sudah diproses untuk respon
+                    'persons' => $personsToSave,
                 ]
-            ], 201); // Created
+            ], 201); 
 
         } catch (Exception $e) {
-            DB::rollBack(); // Rollback transaksi jika terjadi error
+            DB::rollBack();
             return response()->json([
                 'status'  => 'failed',
                 'message' => 'An error occurred during split bill calculation or saving: ' . $e->getMessage()
-            ], 500); // Internal Server Error
+            ], 500);
         }
     }
 
     /**
-     * Endpoint untuk mengambil detail split bill berdasarkan invoice_id.
+     * 
      *
      * @param  string  $invoiceId
      * @return \Illuminate\Http\JsonResponse
@@ -177,17 +166,16 @@ class SplitBillController extends Controller
     public function show($invoiceId)
     {
         try {
-            // Mengambil invoice dengan relasi persons dan items
+
             $invoice = Invoice::with('persons.items')->where('invoice_id', $invoiceId)->first();
 
             if (!$invoice) {
                 return response()->json([
                     'status'  => 'failed',
                     'message' => 'Invoice not found.'
-                ], 404); // Not Found
+                ], 404); 
             }
 
-            // Format data persons untuk output yang lebih rapi
             $formattedPersons = $invoice->persons->map(function ($person) {
                 return [
                     'name'         => $person->person_name,
@@ -224,7 +212,7 @@ class SplitBillController extends Controller
             return response()->json([
                 'status'  => 'failed',
                 'message' => 'An error occurred while retrieving invoice: ' . $e->getMessage()
-            ], 500); // Internal Server Error
+            ], 500); 
         }
     }
 }
