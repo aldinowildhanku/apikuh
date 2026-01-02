@@ -2,7 +2,7 @@
 
 return [
     'servers' => [
-        'indopride' => 'bak4pl',
+        'indopride' => '237yxy',
         'kotakita' => 'r35px8',
         'executive' => 'roek67',
         'kitarp' => 'rj9l5g',
@@ -12,5 +12,5 @@ return [
         'balkonrp' => 'r7mx7x',
         'jingarena' => '6gqrq4',
     ],
-    'base_url' => 'servers-frontend.fivem.net/api/servers/single/',
+    'base_url' => 'frontend.cfx-services.net/api/servers/single/',
 ];
