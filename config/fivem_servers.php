@@ -10,6 +10,7 @@ return [
         'hopero' => 'ymzj4j',
         'imerp' => 'zrvmg4',
         'balkonrp' => 'r7mx7x',
+        'jingarena' => '6gqrq4',
     ],
     'base_url' => 'servers-frontend.fivem.net/api/servers/single/',
 ];
