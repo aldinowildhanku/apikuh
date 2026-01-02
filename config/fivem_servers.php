@@ -9,6 +9,7 @@ return [
         'soirp' => 'jygd5m',
         'hopero' => 'ymzj4j',
         'imerp' => 'zrvmg4',
+        'balkonrp' => 'r7mx7x',
     ],
     'base_url' => 'servers-frontend.fivem.net/api/servers/single/',
 ];
