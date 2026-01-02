@@ -7,7 +7,7 @@ return [
     'allowed_methods' => ['*'],
 
     'allowed_origins' => [
-        'https://tool.aldino.dev',
+        '*',
     ],
 
     'allowed_origins_patterns' => [],
